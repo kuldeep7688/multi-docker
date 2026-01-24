@@ -13,12 +13,28 @@ jobs:
             - run: docker build -t 7688kuldeepsingh/react-test-up -f ./client/Dockerfile.dev ./client 
             - run: docker run -e CI=true 7688kuldeepsingh/react-test-up npm test -- --coverage --watchAll=false
             
-            - run: docker build -t 7688kuldeepsingh/multi-client-up ./client
-            - run: docker build -t 7688kuldeepsingh/multi-nginx-up ./nginx
-            - run: docker build -t 7688kuldeepsingh/multi-server-up ./server
-            - run: docker build -t 7688kuldeepsingh/multi-worker-up ./worker
+            - run: docker build -t 7688kuldeepsingh/multi-client ./client
+            - run: docker build -t 7688kuldeepsingh/multi-nginx ./nginx
+            - run: docker build -t 7688kuldeepsingh/multi-server ./server
+            - run: docker build -t 7688kuldeepsingh/multi-worker ./worker
 
-            - run: docker push 7688kuldeepsingh/multi-client-up
-            - run: docker push 7688kuldeepsingh/multi-nginx-up
-            - run: docker push 7688kuldeepsingh/multi-server-up
-            - run: docker push 7688kuldeepsingh/multi-worker-up
+            - run: docker push 7688kuldeepsingh/multi-client
+            - run: docker push 7688kuldeepsingh/multi-nginx
+            - run: docker push 7688kuldeepsingh/multi-server
+            - run: docker push 7688kuldeepsingh/multi-worker
+            
+            - name: Generate deployment package
+                run: zip -r deploy.zip . -x '*.git*'
+
+            - name: Deploy to EB
+                uses: einaregilsson/beanstalk-deploy@v18
+                with:
+                aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+                aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+                application_name: multi-docker
+                environment_name: Multi-docker-env
+                existing_bucket_name: elasticbeanstalk-us-east-1-710542178246
+                bucket_path: docker-multi
+                region: us-east-1
+                version_label: ${{ github.sha }}
+                deployment_package: deploy.zip
